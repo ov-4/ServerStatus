@@ -29,20 +29,14 @@ void RunHttpServer() {
 
     // usage: /api/history?id=127.0.0.1:1234
     svr.Get("/api/history", [](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         if (req.has_param("id")) {
             std::string id = req.get_param_value("id");
             auto history = serverstatus::Storage::Instance().GetHistoryAsJson(id);
-            
-            if (history.empty()) {
-                res.status = 404;
-                res.set_content("ID not found or no data", "text/plain");
-            } else {
-                res.set_header("Access-Control-Allow-Origin", "*");
-                res.set_content(history.dump(), "application/json");
-            }
+            res.set_content(history.dump(), "application/json");
         } else {
             res.status = 400;
-            res.set_content("Missing 'id' parameter", "text/plain");
+            res.set_content("Missing id param", "text/plain");
         }
     });
 

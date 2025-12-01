@@ -20,8 +20,11 @@ public:
 
     void Update(const std::string& id, const SystemState& state) {
         std::lock_guard<std::mutex> lock(mutex_);
+
         auto& history = clients_[id];
+        
         history.push_back(state);
+        
         if (history.size() > MAX_HISTORY_SIZE) {
             history.pop_front();
         }
@@ -52,13 +55,13 @@ public:
 
     nlohmann::json GetHistoryAsJson(const std::string& id) {
         std::lock_guard<std::mutex> lock(mutex_);
+        nlohmann::json result = nlohmann::json::array();
+        
         if (clients_.find(id) == clients_.end()) {
-            return nlohmann::json::array();
+            return result;
         }
 
         const auto& history = clients_[id];
-        nlohmann::json result = nlohmann::json::array();
-
         for (const auto& state : history) {
             nlohmann::json j;
             j["cpu"] = state.cpu_usage();
@@ -80,7 +83,6 @@ private:
     Storage& operator=(const Storage&) = delete;
 
     std::mutex mutex_;
-    
     std::map<std::string, std::deque<SystemState>> clients_;
 };
 
