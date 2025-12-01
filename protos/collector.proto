@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package serverstatus;
+
+message SystemState {
+  // CPU usage (0.0 - 100.0)
+  float cpu_usage = 1;
+
+  // RAM
+  uint64 memory_total = 2;
+  uint64 memory_used = 3;
+
+  // disk
+  uint64 disk_total = 4;
+  uint64 disk_used = 5;
+
+  // network speed
+  uint64 network_rx_speed = 6; // download
+  uint64 network_tx_speed = 7; // upload
+
+  // uptime
+  uint64 uptime = 8;
+}
+
+message Ack {
+  bool success = 1;
+  string message = 2;
+}
+
+service MonitorService {
+  rpc ReportState (SystemState) returns (Ack);
+}
