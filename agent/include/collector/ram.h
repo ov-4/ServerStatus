@@ -2,11 +2,11 @@
 
 #include "collector.pb.h"
 
-namespace monitor {
+namespace collector {
 
 class RamMonitor {
 public:
     void Collect(serverstatus::SystemState* state);
 };
 
-} // namespace monitor
+} // namespace collector

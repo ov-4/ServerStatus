@@ -2,7 +2,7 @@
 
 #include "collector.pb.h"
 
-namespace monitor {
+namespace collector {
 
 class CpuMonitor {
 public:
@@ -28,4 +28,4 @@ private:
     unsigned long long last_idle_time_;
 };
 
-} // namespace monitor
+} // namespace collector

@@ -1,7 +1,7 @@
 #include "collector/disk.h"
 #include <sys/statvfs.h>
 
-namespace monitor {
+namespace collector {
 
 void DiskMonitor::Collect(serverstatus::SystemState* state, const std::string& path) {
     struct statvfs buf;
@@ -19,4 +19,4 @@ void DiskMonitor::Collect(serverstatus::SystemState* state, const std::string& p
     }
 }
 
-} // namespace monitor
+} // namespace collector

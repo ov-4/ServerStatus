@@ -3,7 +3,7 @@
 #include "collector.pb.h"
 #include <cstdint>
 
-namespace monitor {
+namespace collector {
 
 class NetworkMonitor {
 public:
@@ -15,4 +15,4 @@ private:
     uint64_t last_total_tx_;
 };
 
-} // namespace monitor
+} // namespace collector

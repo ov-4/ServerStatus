@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-namespace monitor {
+namespace collector {
 
 CpuMonitor::CpuMonitor() : last_total_time_(0), last_idle_time_(0) {
     serverstatus::SystemState dummy;
@@ -55,4 +55,4 @@ void CpuMonitor::Collect(serverstatus::SystemState* state) {
     state->set_cpu_usage(usage);
 }
 
-} // namespace monitor
+} // namespace collector

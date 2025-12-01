@@ -3,7 +3,7 @@
 #include <thread>
 #include <chrono>
 
-namespace monitor {
+namespace collector {
 
 AgentClient::AgentClient(const std::string& server_address) {
     std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(
@@ -45,4 +45,4 @@ void AgentClient::Run() {
     }
 }
 
-} // namespace monitor
+} // namespace collector

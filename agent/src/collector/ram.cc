@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace monitor {
+namespace collector {
 
 void RamMonitor::Collect(serverstatus::SystemState* state) {
     std::ifstream file("/proc/meminfo");
@@ -42,4 +42,4 @@ void RamMonitor::Collect(serverstatus::SystemState* state) {
     state->set_memory_used(used_kb * 1024);
 }
 
-} // namespace monitor
+} // namespace collector

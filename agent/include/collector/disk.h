@@ -3,11 +3,11 @@
 #include "collector.pb.h"
 #include <string>
 
-namespace monitor {
+namespace collector {
 
 class DiskMonitor {
 public:
     void Collect(serverstatus::SystemState* state, const std::string& path = "/");
 };
 
-} // namespace monitor
+} // namespace collector

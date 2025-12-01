@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     std::cout << "Starting ServerStatus Agent (gRPC Mode)..." << std::endl;
     std::cout << "Target Server: " << server_address << std::endl;
 
-    monitor::AgentClient client(server_address);
+    collector::AgentClient client(server_address);
 
     client.Run();
 

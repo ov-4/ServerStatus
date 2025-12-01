@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-namespace monitor {
+namespace collector {
 
 NetworkMonitor::NetworkMonitor() : last_total_rx_(0), last_total_tx_(0) {
     serverstatus::SystemState dummy;
@@ -60,4 +60,4 @@ void NetworkMonitor::Collect(serverstatus::SystemState* state) {
     state->set_network_tx_speed(tx_speed);
 }
 
-} // namespace monitor
+} // namespace collector

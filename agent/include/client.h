@@ -10,7 +10,7 @@
 #include "collector/disk.h"
 #include "collector/network.h"
 
-namespace monitor {
+namespace collector {
 
 class AgentClient {
 public:
@@ -27,4 +27,4 @@ private:
     NetworkMonitor net_mon_;
 };
 
-} // namespace monitor
+} // namespace collector
