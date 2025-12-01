@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 
+#include "client.h"
 #include "collector/cpu.h"
 #include "collector/ram.h"
 #include "collector/disk.h"
