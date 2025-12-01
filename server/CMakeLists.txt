@@ -1,3 +1,28 @@
+set(SERVER_RES_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/resources/config.yaml")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${SERVER_RES_CONFIG}")
+
+if(EXISTS "${SERVER_RES_CONFIG}")
+    file(READ "${SERVER_RES_CONFIG}" SERVER_YAML_CONTENT)
+
+    # for CC format
+    string(REPLACE "\\" "\\\\" SERVER_YAML_CONTENT "${SERVER_YAML_CONTENT}")
+    string(REPLACE "\"" "\\\"" SERVER_YAML_CONTENT "${SERVER_YAML_CONTENT}")
+    string(REPLACE "\n" "\\n" SERVER_YAML_CONTENT "${SERVER_YAML_CONTENT}")
+else()
+    message(WARNING "server/resources/config.yaml not found!")
+    set(SERVER_YAML_CONTENT "")
+endif()
+
+# generate .h file
+set(SERVER_GEN_HEADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY "${SERVER_GEN_HEADER_DIR}")
+file(WRITE "${SERVER_GEN_HEADER_DIR}/default_config.h" 
+"#pragma once
+namespace serverstatus {
+    const char* DEFAULT_CONFIG_CONTENT = \"${SERVER_YAML_CONTENT}\";
+}
+")
+
 set(SERVER_SOURCES
     src/main.cc
     src/handlers/update_handler.cc
@@ -10,6 +35,7 @@ add_executable(server_status_server ${SERVER_SOURCES})
 target_include_directories(server_status_server PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${cpp-httplib_SOURCE_DIR}
+    ${SERVER_GEN_HEADER_DIR} # default .yaml file
 )
 
 find_package(Threads REQUIRED)

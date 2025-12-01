@@ -1,4 +1,5 @@
 #include "server_config.h"
+#include "default_config.h"
 #include <fstream>
 #include <iostream>
 #include <yaml-cpp/yaml.h>
@@ -8,27 +9,11 @@ namespace serverstatus {
 bool ServerConfig::Load(const std::string& path) {
     std::ifstream fin(path);
     if (!fin.good()) {
-        std::cout << "[Config] Configuration file not found. Generating default: " << path << std::endl;
+        std::cout << "[Config] Configuration file not found. Writing default to: " << path << std::endl;
         
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "listen_host" << YAML::Value << "0.0.0.0";
-        out << YAML::Key << "listen_port" << YAML::Value << 8080;
-        out << YAML::Key << "grpc_host" << YAML::Value << "0.0.0.0";
-        out << YAML::Key << "grpc_port" << YAML::Value << 8081;
-        out << YAML::Key << "history_size" << YAML::Value << 120;
-        out << YAML::EndMap;
-
         std::ofstream fout(path);
-        fout << out.c_str();
+        fout << DEFAULT_CONFIG_CONTENT;
         fout.close();
-
-        data_.listen_host = "0.0.0.0";
-        data_.listen_port = 8080;
-        data_.grpc_host = "0.0.0.0";
-        data_.grpc_port = 8081;
-        data_.history_size = 120;
-        return true;
     }
 
     try {

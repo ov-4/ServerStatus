@@ -50,7 +50,7 @@ void print_monitor_info(const serverstatus::SystemState& state) {
 }
 
 int main(int argc, char** argv) {
-    std::string config_path = "agent_config.yaml";
+    std::string config_path = "config.yaml";
     if (collector::AgentConfig::Instance().Load(config_path)) {
         // load successfully
     } else {
