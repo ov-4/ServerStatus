@@ -20,3 +20,10 @@ target_link_libraries(server_status_server PRIVATE
     collector_grpc_proto
     gRPC::grpc++
 )
+
+add_custom_command(TARGET server_status_server POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/web
+    $<TARGET_FILE_DIR:server_status_server>/web
+    COMMENT "Copying web assets to output directory..."
+)

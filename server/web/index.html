@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServerStatus Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .progress { height: 20px; }
+        .table-hover tbody tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>ServerStatus <small class="text-muted fs-6">Lite</small></h2>
+        <span class="badge bg-success" id="status-badge">Connected</span>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID / IP</th>
+                        <th style="width: 20%">CPU</th>
+                        <th>RAM</th>
+                        <th>Disk</th>
+                        <th>Network (↓ / ↑)</th>
+                    </tr>
+                </thead>
+                <tbody id="server-list">
+                    <tr><td colspan="5">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function updateStats() {
+        try {
+            const response = await fetch('/api/stats');
+            if (!response.ok) throw new Error("API Error");
+            
+            const data = await response.json();
+            const tbody = document.getElementById('server-list');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Waiting for agents to connect...</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(s => {
+                let cpuClass = 'bg-success';
+                if (s.cpu > 50) cpuClass = 'bg-warning';
+                if (s.cpu > 80) cpuClass = 'bg-danger';
+
+                html += `
+                <tr>
+                    <td class="fw-bold text-start ps-4">${s.id}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" style="width: 40px">${s.cpu.toFixed(1)}%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar ${cpuClass}" role="progressbar" 
+                                     style="width: ${s.cpu}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        ${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}
+                    </td>
+                    <td>
+                        ${formatBytes(s.disk_used)} / ${formatBytes(s.disk_total)}
+                    </td>
+                    <td>
+                        <span class="text-success">↓ ${formatBytes(s.rx_speed)}/s</span> <br>
+                        <span class="text-primary">↑ ${formatBytes(s.tx_speed)}/s</span>
+                    </td>
+                </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            document.getElementById('status-badge').className = 'badge bg-success';
+            document.getElementById('status-badge').innerText = 'Live';
+        } catch (error) {
+            console.error(error);
+            document.getElementById('status-badge').className = 'badge bg-danger';
+            document.getElementById('status-badge').innerText = 'Offline';
+        }
+    }
+
+    setInterval(updateStats, 1000);
+    updateStats(); 
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServerStatus Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .progress { height: 20px; }
+        .table-hover tbody tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>ServerStatus <small class="text-muted fs-6">Lite</small></h2>
+        <span class="badge bg-success" id="status-badge">Connected</span>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID / IP</th>
+                        <th style="width: 20%">CPU</th>
+                        <th>RAM</th>
+                        <th>Disk</th>
+                        <th>Network (↓ / ↑)</th>
+                    </tr>
+                </thead>
+                <tbody id="server-list">
+                    <tr><td colspan="5">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 格式化字节单位
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 更新表格
+    async function updateStats() {
+        try {
+            const response = await fetch('/api/stats');
+            if (!response.ok) throw new Error("API Error");
+            
+            const data = await response.json();
+            const tbody = document.getElementById('server-list');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Waiting for agents to connect...</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(s => {
+                // 进度条颜色逻辑
+                let cpuClass = 'bg-success';
+                if (s.cpu > 50) cpuClass = 'bg-warning';
+                if (s.cpu > 80) cpuClass = 'bg-danger';
+
+                html += `
+                <tr>
+                    <td class="fw-bold text-start ps-4">${s.id}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" style="width: 40px">${s.cpu.toFixed(1)}%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar ${cpuClass}" role="progressbar" 
+                                     style="width: ${s.cpu}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        ${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}
+                    </td>
+                    <td>
+                        ${formatBytes(s.disk_used)} / ${formatBytes(s.disk_total)}
+                    </td>
+                    <td>
+                        <span class="text-success">↓ ${formatBytes(s.rx_speed)}/s</span> <br>
+                        <span class="text-primary">↑ ${formatBytes(s.tx_speed)}/s</span>
+                    </td>
+                </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            document.getElementById('status-badge').className = 'badge bg-success';
+            document.getElementById('status-badge').innerText = 'Live';
+        } catch (error) {
+            console.error(error);
+            document.getElementById('status-badge').className = 'badge bg-danger';
+            document.getElementById('status-badge').innerText = 'Offline';
+        }
+    }
+
+    // 每 2 秒刷新一次
+    setInterval(updateStats, 2000);
+    updateStats(); // 初次立即加载
+</script>
+
+</body>
+</html>
