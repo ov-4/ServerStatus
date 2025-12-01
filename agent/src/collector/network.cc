@@ -1,4 +1,4 @@
-#include "monitors/network.h"
+#include "collector/network.h"
 #include <fstream>
 #include <sstream>
 #include <string>

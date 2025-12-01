@@ -5,10 +5,10 @@
 #include <string>
 #include <sstream>
 
-#include "monitors/cpu.h"
-#include "monitors/ram.h"
-#include "monitors/disk.h"
-#include "monitors/network.h"
+#include "collector/cpu.h"
+#include "collector/ram.h"
+#include "collector/disk.h"
+#include "collector/network.h"
 
 std::string format_bytes(uint64_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB", "PB"};

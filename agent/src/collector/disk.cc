@@ -1,4 +1,4 @@
-#include "monitors/disk.h"
+#include "collector/disk.h"
 #include <sys/statvfs.h>
 
 namespace monitor {

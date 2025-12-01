@@ -1,5 +1,4 @@
-// agent/src/monitors/ram.cc
-#include "monitors/ram.h"
+#include "collector/ram.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -12,7 +11,6 @@ RamStatus RamMonitor::getStatus() {
     std::string line;
     std::unordered_map<std::string, uint64_t> mem_info;
     
-    // 逐行读取并解析 Key-Value
     while (std::getline(file, line)) {
         std::istringstream ss(line);
         std::string key;

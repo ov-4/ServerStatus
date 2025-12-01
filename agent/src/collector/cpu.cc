@@ -1,4 +1,4 @@
-#include "monitors/cpu.h"
+#include "collector/cpu.h"
 #include <fstream>
 #include <sstream>
 #include <vector>
