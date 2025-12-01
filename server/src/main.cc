@@ -1,28 +1,27 @@
-// server/src/main.cc
 #include <iostream>
-#include "server_config.h"
-#include "handlers/update_handler.h"
+#include <memory>
+#include <string>
 
-// 必须定义这个宏才能使用 httplib (如果库是 FetchContent 下来的通常自带，但为了保险)
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include <httplib.h>
+#include <grpcpp/grpcpp.h>
+#include "service.h"
+
+using grpc::Server;
+using grpc::ServerBuilder;
 
 int main() {
-    // 实例化 Server
-    httplib::Server svr;
+    std::string server_address("0.0.0.0:50051");
+    serverstatus::MonitorServiceImpl service;
 
-    // 绑定路由：POST /post/update -> handle_update
-    svr.Post("/post/update", handler::handle_update);
+    ServerBuilder builder;
 
-    // 启动监听
-    std::cout << "ServerStatus Server is running..." << std::endl;
-    std::cout << "Listening on " << SERVER_HOST << ":" << SERVER_PORT << std::endl;
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    
+    builder.RegisterService(&service);
 
-    // listen 会阻塞主线程
-    if (!svr.listen(SERVER_HOST, SERVER_PORT)) {
-        std::cerr << "[Error] Failed to bind to port " << SERVER_PORT << std::endl;
-        return 1;
-    }
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "ServerStatus gRPC Server listening on " << server_address << std::endl;
+
+    server->Wait();
 
     return 0;
 }

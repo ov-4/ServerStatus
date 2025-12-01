@@ -1,6 +1,7 @@
 set(SERVER_SOURCES
     src/main.cc
     src/handlers/update_handler.cc
+    src/service.cc
 )
 
 add_executable(server_status_server ${SERVER_SOURCES})
@@ -16,4 +17,6 @@ target_link_libraries(server_status_server PRIVATE
     nlohmann_json::nlohmann_json
     OpenSSL::SSL
     Threads::Threads
+    collector_grpc_proto
+    gRPC::grpc++
 )
