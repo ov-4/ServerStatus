@@ -25,7 +25,8 @@ public:
         
         history.push_back(state);
         
-        if (history.size() > MAX_HISTORY_SIZE) {
+        int max_size = ServerConfig::Instance().Get().history_size;
+        if (history.size() > static_cast<size_t>(max_size)) {
             history.pop_front();
         }
     }

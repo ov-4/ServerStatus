@@ -18,6 +18,7 @@ using grpc::ServerBuilder;
 
 void RunHttpServer() {
     httplib::Server svr;
+    const auto& config = serverstatus::ServerConfig::Instance().Get();
 
     svr.Get("/api/stats", [](const httplib::Request&, httplib::Response& res) {
         auto stats_list = serverstatus::Storage::Instance().GetAllAsJson();
@@ -27,7 +28,6 @@ void RunHttpServer() {
         res.set_content(json_response.dump(), "application/json");
     });
 
-    // usage: /api/history?id=127.0.0.1:1234
     svr.Get("/api/history", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         if (req.has_param("id")) {
@@ -49,19 +49,25 @@ void RunHttpServer() {
             res.set_content(buffer.str(), "text/html");
         } else {
             res.status = 404;
-            res.set_content("web/index.html not found. Please ensure you are running from the correct directory.", "text/plain");
+            res.set_content("web/index.html not found.", "text/plain");
         }
     });
 
-    std::cout << "HTTP Server listening on " << SERVER_HOST << ":" << SERVER_PORT << std::endl;
-    svr.listen(SERVER_HOST, SERVER_PORT);
+    std::cout << "HTTP Server listening on " << config.listen_host << ":" << config.listen_port << std::endl;
+    svr.listen(config.listen_host.c_str(), config.listen_port);
 }
 
 int main() {
+    if (!serverstatus::ServerConfig::Instance().Load("config.yaml")) {
+        std::cerr << "Failed to load config.yaml" << std::endl;
+        return 1;
+    }
+    const auto& config = serverstatus::ServerConfig::Instance().Get();
+
     std::thread http_thread(RunHttpServer);
     http_thread.detach(); 
 
-    std::string server_address(GPRC_ADDRESS);
+    std::string server_address = config.grpc_host + ":" + std::to_string(config.grpc_port);
     serverstatus::MonitorServiceImpl service;
 
     ServerBuilder builder;

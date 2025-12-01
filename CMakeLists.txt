@@ -11,9 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 include(FetchContent)
-find_package(OpenSSL REQUIRED)
+option(HTTPLIB_REQUIRE_OPENSSL "Require OpenSSL" ON)
 
 message(STATUS "Fetching nlohmann/json...")
 FetchContent_Declare(
@@ -23,8 +24,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-option(HTTPLIB_REQUIRE_OPENSSL "Require OpenSSL" ON)
-
 message(STATUS "Fetching cpp-httplib...")
 FetchContent_Declare(
     cpp-httplib
@@ -32,6 +31,17 @@ FetchContent_Declare(
     GIT_TAG        v0.14.3
 )
 FetchContent_MakeAvailable(cpp-httplib)
+
+message(STATUS "Fetching yaml-cpp...")
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG        0.8.0 
+)
+
+set(YAML_CPP_BUILD_TESTS OFF CACHE INTERNAL "")
+set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(yaml-cpp)
 
 get_target_property(gRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin LOCATION)
 

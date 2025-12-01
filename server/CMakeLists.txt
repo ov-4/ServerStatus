@@ -2,6 +2,7 @@ set(SERVER_SOURCES
     src/main.cc
     src/handlers/update_handler.cc
     src/service.cc
+    src/config.cc
 )
 
 add_executable(server_status_server ${SERVER_SOURCES})
@@ -19,6 +20,7 @@ target_link_libraries(server_status_server PRIVATE
     Threads::Threads
     collector_grpc_proto
     gRPC::grpc++
+    yaml-cpp
 )
 
 add_custom_command(TARGET server_status_server POST_BUILD

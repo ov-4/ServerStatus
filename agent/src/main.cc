@@ -11,6 +11,7 @@
 #include "collector/disk.h"
 #include "collector/network.h"
 #include "collector.pb.h"
+#include "agent_config.h"
 
 #define SERVER_ADDRESS "127.0.0.1:8081"
 
@@ -49,9 +50,19 @@ void print_monitor_info(const serverstatus::SystemState& state) {
 }
 
 int main(int argc, char** argv) {
-    std::string server_address = SERVER_ADDRESS;
+    std::string config_path = "agent_config.yaml";
+    if (collector::AgentConfig::Instance().Load(config_path)) {
+        // load successfully
+    } else {
+        std::cerr << "Failed to initialize configuration." << std::endl;
+        return 1;
+    }
+
+    std::string server_address = collector::AgentConfig::Instance().Get().server_address;
+    
     if (argc > 1) {
         server_address = argv[1];
+        std::cout << "[Info] Overriding server address from args: " << server_address << std::endl;
     }
 
     std::cout << "Starting ServerStatus Agent (gRPC Mode)..." << std::endl;
