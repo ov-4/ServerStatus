@@ -1,4 +1,5 @@
 #include "service.h"
+#include "storage.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -20,11 +21,14 @@ std::string FormatBytes(uint64_t bytes) {
 }
 
 grpc::Status MonitorServiceImpl::ReportState(grpc::ServerContext* context, const SystemState* request, Ack* reply) {
-    std::cout << "[RPC] Client: " << context->peer() << " | "
-              << "CPU: " << std::fixed << std::setprecision(1) << request->cpu_usage() << "% | "
-              << "RAM: " << FormatBytes(request->memory_used()) << " / " << FormatBytes(request->memory_total()) << " | "
-              << "Net: ↓" << FormatBytes(request->network_rx_speed()) << "/s ↑" << FormatBytes(request->network_tx_speed()) << "/s"
-              << std::endl;
+    // 获取客户端标识 (IP:Port)
+    std::string client_id = context->peer();
+
+    // [新增] 将数据存入内存
+    Storage::Instance().Update(client_id, *request);
+
+    // 依然保留日志打印，方便调试
+    std::cout << "[RPC] Update from: " << client_id << std::endl;
 
     reply->set_success(true);
     reply->set_message("OK");
