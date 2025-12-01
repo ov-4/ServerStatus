@@ -11,6 +11,8 @@
 #include "collector/network.h"
 #include "collector.pb.h"
 
+#define SERVER_ADDRESS "127.0.0.1:8080"
+
 std::string format_bytes(uint64_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB", "PB"};
     int i = 0;
@@ -45,25 +47,18 @@ void print_monitor_info(const serverstatus::SystemState& state) {
     // std::cout << " Uptime: " << state.uptime() << std::endl;
 }
 
-int main() {
-    std::cout << "Starting ServerStatus Agent (Protobuf Mode)..." << std::endl;
-
-    monitor::CpuMonitor cpu_mon;
-    monitor::RamMonitor ram_mon;
-    monitor::DiskMonitor disk_mon;
-    monitor::NetworkMonitor net_mon;
-
-    while (true) {
-        serverstatus::SystemState state;
-
-        cpu_mon.Collect(&state);
-        ram_mon.Collect(&state);
-        disk_mon.Collect(&state, "/");
-        net_mon.Collect(&state);
-
-        print_monitor_info(state);
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+int main(int argc, char** argv) {
+    std::string server_address = SERVER_ADDRESS;
+    if (argc > 1) {
+        server_address = argv[1];
     }
+
+    std::cout << "Starting ServerStatus Agent (gRPC Mode)..." << std::endl;
+    std::cout << "Target Server: " << server_address << std::endl;
+
+    monitor::AgentClient client(server_address);
+
+    client.Run();
+
     return 0;
 }

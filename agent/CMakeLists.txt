@@ -16,6 +16,9 @@ target_link_libraries(agent_collector PUBLIC
     collector_grpc_proto
 )
 
-add_executable(server_status_agent src/main.cc)
+add_executable(server_status_agent 
+    src/main.cc 
+    src/client.cc 
+)
 
 target_link_libraries(server_status_agent PRIVATE agent_collector OpenSSL::SSL)
