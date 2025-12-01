@@ -1,6 +1,8 @@
 set(MONITOR_SOURCES
     src/monitors/cpu.cc
     src/monitors/ram.cc
+    src/monitors/disk.cc
+    src/monitors/network.cc
 )
 
 add_library(agent_monitors STATIC ${MONITOR_SOURCES})
