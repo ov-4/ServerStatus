@@ -12,7 +12,7 @@
 #include "collector/network.h"
 #include "collector.pb.h"
 
-#define SERVER_ADDRESS "127.0.0.1:8080"
+#define SERVER_ADDRESS "127.0.0.1:8081"
 
 std::string format_bytes(uint64_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB", "PB"};

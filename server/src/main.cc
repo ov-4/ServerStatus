@@ -4,12 +4,13 @@
 
 #include <grpcpp/grpcpp.h>
 #include "service.h"
+#include "server_config.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 
 int main() {
-    std::string server_address("0.0.0.0:50051");
+    std::string server_address(GPRC_ADDRESS);
     serverstatus::MonitorServiceImpl service;
 
     ServerBuilder builder;
