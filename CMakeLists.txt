@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(ServerStatus
-    VERSION 0.1
     LANGUAGES CXX
 )
 
