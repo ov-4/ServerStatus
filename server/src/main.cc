@@ -19,18 +19,35 @@ using grpc::ServerBuilder;
 void RunHttpServer() {
     httplib::Server svr;
 
-    // API
     svr.Get("/api/stats", [](const httplib::Request&, httplib::Response& res) {
         auto stats_list = serverstatus::Storage::Instance().GetAllAsJson();
         nlohmann::json json_response = stats_list;
         
-        res.set_header("Access-Control-Allow-Origin", "*"); // allow CORS
+        res.set_header("Access-Control-Allow-Origin", "*"); 
         res.set_content(json_response.dump(), "application/json");
+    });
+
+    // usage: /api/history?id=127.0.0.1:1234
+    svr.Get("/api/history", [](const httplib::Request& req, httplib::Response& res) {
+        if (req.has_param("id")) {
+            std::string id = req.get_param_value("id");
+            auto history = serverstatus::Storage::Instance().GetHistoryAsJson(id);
+            
+            if (history.empty()) {
+                res.status = 404;
+                res.set_content("ID not found or no data", "text/plain");
+            } else {
+                res.set_header("Access-Control-Allow-Origin", "*");
+                res.set_content(history.dump(), "application/json");
+            }
+        } else {
+            res.status = 400;
+            res.set_content("Missing 'id' parameter", "text/plain");
+        }
     });
 
     // index
     svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
-        // 尝试读取 web/index.html
         std::ifstream file("web/index.html");
         if (file.is_open()) {
             std::stringstream buffer;
@@ -48,7 +65,7 @@ void RunHttpServer() {
 
 int main() {
     std::thread http_thread(RunHttpServer);
-    http_thread.detach(); // seperate thread for HTTP server
+    http_thread.detach(); 
 
     std::string server_address(GPRC_ADDRESS);
     serverstatus::MonitorServiceImpl service;

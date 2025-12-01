@@ -1,136 +1,32 @@
 <!DOCTYPE html>
-<html lang="en-US">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ServerStatus Monitor</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { padding: 20px; background-color: #f8f9fa; }
-        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .progress { height: 20px; }
-        .table-hover tbody tr:hover { background-color: #f1f1f1; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>ServerStatus <small class="text-muted fs-6">Lite</small></h2>
-        <span class="badge bg-success" id="status-badge">Connected</span>
-    </div>
-
-    <div class="card">
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0 text-center align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID / IP</th>
-                        <th style="width: 20%">CPU</th>
-                        <th>RAM</th>
-                        <th>Disk</th>
-                        <th>Network (↓ / ↑)</th>
-                    </tr>
-                </thead>
-                <tbody id="server-list">
-                    <tr><td colspan="5">Loading data...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<script>
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    async function updateStats() {
-        try {
-            const response = await fetch('/api/stats');
-            if (!response.ok) throw new Error("API Error");
-            
-            const data = await response.json();
-            const tbody = document.getElementById('server-list');
-            
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Waiting for agents to connect...</td></tr>';
-                return;
-            }
-
-            let html = '';
-            data.forEach(s => {
-                let cpuClass = 'bg-success';
-                if (s.cpu > 50) cpuClass = 'bg-warning';
-                if (s.cpu > 80) cpuClass = 'bg-danger';
-
-                html += `
-                <tr>
-                    <td class="fw-bold text-start ps-4">${s.id}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-2" style="width: 40px">${s.cpu.toFixed(1)}%</span>
-                            <div class="progress flex-grow-1">
-                                <div class="progress-bar ${cpuClass}" role="progressbar" 
-                                     style="width: ${s.cpu}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        ${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}
-                    </td>
-                    <td>
-                        ${formatBytes(s.disk_used)} / ${formatBytes(s.disk_total)}
-                    </td>
-                    <td>
-                        <span class="text-success">↓ ${formatBytes(s.rx_speed)}/s</span> <br>
-                        <span class="text-primary">↑ ${formatBytes(s.tx_speed)}/s</span>
-                    </td>
-                </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-            document.getElementById('status-badge').className = 'badge bg-success';
-            document.getElementById('status-badge').innerText = 'Live';
-        } catch (error) {
-            console.error(error);
-            document.getElementById('status-badge').className = 'badge bg-danger';
-            document.getElementById('status-badge').innerText = 'Offline';
-        }
-    }
-
-    setInterval(updateStats, 1000);
-    updateStats(); 
-</script>
-
-</body>
-</html><!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ServerStatus Monitor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { padding: 20px; background-color: #f8f9fa; }
         .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .progress { height: 20px; }
-        .table-hover tbody tr:hover { background-color: #f1f1f1; }
+        .table-hover tbody tr:hover { background-color: #f1f1f1; cursor: pointer; }
+        .d-none { display: none !important; }
+        .chart-container { position: relative; height: 300px; width: 100%; margin-bottom: 30px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>ServerStatus <small class="text-muted fs-6">Lite</small></h2>
-        <span class="badge bg-success" id="status-badge">Connected</span>
+        <h2>ServerStatus <small class="text-muted fs-6">Pro</small></h2>
+        <div>
+            <span class="badge bg-secondary me-2" id="view-badge">Dashboard</span>
+            <span class="badge bg-success" id="status-badge">Connected</span>
+        </div>
     </div>
 
-    <div class="card">
+    <div id="dashboard" class="card">
         <div class="card-body p-0">
             <table class="table table-hover table-striped mb-0 text-center align-middle">
                 <thead class="table-dark">
@@ -147,11 +43,60 @@
                 </tbody>
             </table>
         </div>
+        <div class="card-footer text-muted text-center text-small">
+            Click to check details
+        </div>
+    </div>
+
+    <div id="detail" class="d-none">
+        <button class="btn btn-outline-primary mb-3" onclick="showDashboard()">← 返回列表</button>
+        <h4 id="detail-title" class="mb-3">Server Details</h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">CPU & RAM Usage (%)</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartCpuRam"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">Network Speed (KB/s)</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartNet"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header">Disk Usage (%)</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartDisk"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 格式化字节单位
+    let refreshInterval;
+    let currentDetailId = null;
+    
+    let charts = {
+        cpuRam: null,
+        net: null,
+        disk: null
+    };
+
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -160,8 +105,10 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // 更新表格
+    // ================= list =================
     async function updateStats() {
+        if (currentDetailId) return;
+
         try {
             const response = await fetch('/api/stats');
             if (!response.ok) throw new Error("API Error");
@@ -176,49 +123,144 @@
 
             let html = '';
             data.forEach(s => {
-                // 进度条颜色逻辑
                 let cpuClass = 'bg-success';
                 if (s.cpu > 50) cpuClass = 'bg-warning';
                 if (s.cpu > 80) cpuClass = 'bg-danger';
 
                 html += `
-                <tr>
+                <tr onclick="showDetail('${s.id}')">
                     <td class="fw-bold text-start ps-4">${s.id}</td>
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="me-2" style="width: 40px">${s.cpu.toFixed(1)}%</span>
                             <div class="progress flex-grow-1">
-                                <div class="progress-bar ${cpuClass}" role="progressbar" 
-                                     style="width: ${s.cpu}%"></div>
+                                <div class="progress-bar ${cpuClass}" role="progressbar" style="width: ${s.cpu}%"></div>
                             </div>
                         </div>
                     </td>
-                    <td>
-                        ${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}
-                    </td>
-                    <td>
-                        ${formatBytes(s.disk_used)} / ${formatBytes(s.disk_total)}
-                    </td>
+                    <td>${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}</td>
+                    <td>${formatBytes(s.disk_used)} / ${formatBytes(s.disk_total)}</td>
                     <td>
                         <span class="text-success">↓ ${formatBytes(s.rx_speed)}/s</span> <br>
                         <span class="text-primary">↑ ${formatBytes(s.tx_speed)}/s</span>
                     </td>
-                </tr>
-                `;
+                </tr>`;
             });
             tbody.innerHTML = html;
-            document.getElementById('status-badge').className = 'badge bg-success';
-            document.getElementById('status-badge').innerText = 'Live';
+            updateStatus(true);
         } catch (error) {
             console.error(error);
-            document.getElementById('status-badge').className = 'badge bg-danger';
-            document.getElementById('status-badge').innerText = 'Offline';
+            updateStatus(false);
         }
     }
 
-    // 每 2 秒刷新一次
-    setInterval(updateStats, 2000);
-    updateStats(); // 初次立即加载
+    // ================= detail =================
+    function showDetail(id) {
+        currentDetailId = id;
+        document.getElementById('dashboard').classList.add('d-none');
+        document.getElementById('detail').classList.remove('d-none');
+        document.getElementById('detail-title').innerText = `Details: ${id}`;
+        document.getElementById('view-badge').innerText = 'Detail View';
+        
+        loadHistory(id);
+    }
+
+    function showDashboard() {
+        currentDetailId = null;
+        document.getElementById('detail').classList.add('d-none');
+        document.getElementById('dashboard').classList.remove('d-none');
+        document.getElementById('view-badge').innerText = 'Dashboard';
+        
+        // destroy the charts
+        Object.values(charts).forEach(c => { if(c) c.destroy(); });
+        updateStats(); 
+    }
+
+    async function loadHistory(id) {
+        if (currentDetailId !== id) return;
+
+        try {
+            const response = await fetch(`/api/history?id=${id}`);
+            if (!response.ok) throw new Error("History API Error");
+            const data = await response.json();
+            
+            renderCharts(data);
+            updateStatus(true);
+        } catch (e) {
+            console.error(e);
+            updateStatus(false);
+        }
+    }
+
+    function renderCharts(data) {
+        const labels = data.map((_, i) => i + 1); // time index
+        
+        // 1. CPU & RAM
+        const ctxCpu = document.getElementById('chartCpuRam').getContext('2d');
+        if (charts.cpuRam) charts.cpuRam.destroy();
+        charts.cpuRam = new Chart(ctxCpu, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'CPU %', data: data.map(d => d.cpu), borderColor: 'red', tension: 0.4 },
+                    { label: 'RAM %', data: data.map(d => (d.mem_used / d.mem_total * 100)), borderColor: 'blue', tension: 0.4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+        });
+
+        // 2. Network (Convert to KB/s for better chart scaling)
+        const ctxNet = document.getElementById('chartNet').getContext('2d');
+        if (charts.net) charts.net.destroy();
+        charts.net = new Chart(ctxNet, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Download (KB/s)', data: data.map(d => d.rx_speed / 1024), borderColor: 'green', tension: 0.4 },
+                    { label: 'Upload (KB/s)', data: data.map(d => d.tx_speed / 1024), borderColor: 'orange', tension: 0.4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 3. Disk
+        const ctxDisk = document.getElementById('chartDisk').getContext('2d');
+        if (charts.disk) charts.disk.destroy();
+        charts.disk = new Chart(ctxDisk, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Disk Usage %', data: data.map(d => (d.disk_used / d.disk_total * 100)), borderColor: 'purple', tension: 0.4, fill: true, backgroundColor: 'rgba(128,0,128,0.2)' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+        });
+    }
+
+    function updateStatus(isOnline) {
+        const badge = document.getElementById('status-badge');
+        if (isOnline) {
+            badge.className = 'badge bg-success';
+            badge.innerText = 'Live';
+        } else {
+            badge.className = 'badge bg-danger';
+            badge.innerText = 'Offline';
+        }
+    }
+
+    // global timer
+    setInterval(() => {
+        if (currentDetailId) {
+            loadHistory(currentDetailId);
+        } else {
+            updateStats();
+        }
+    }, 1000); 
+    
+    updateStats(); 
 </script>
 
 </body>

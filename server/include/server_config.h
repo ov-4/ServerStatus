@@ -5,3 +5,5 @@
 #define SERVER_HOST "0.0.0.0"
 
 #define GPRC_ADDRESS "0.0.0.0:8081"
+
+#define MAX_HISTORY_SIZE 120
