@@ -35,4 +35,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cpp-httplib)
 
 add_subdirectory(agent)
-# add_subdirectory(server)
+add_subdirectory(server)
