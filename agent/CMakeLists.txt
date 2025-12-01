@@ -11,7 +11,10 @@ target_include_directories(agent_collector PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(agent_collector PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(agent_collector PUBLIC 
+    nlohmann_json::nlohmann_json
+    collector_grpc_proto
+)
 
 add_executable(server_status_agent src/main.cc)
 

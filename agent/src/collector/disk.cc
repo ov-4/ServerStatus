@@ -3,21 +3,20 @@
 
 namespace monitor {
 
-DiskStatus DiskMonitor::getStatus(const std::string& path) {
-    DiskStatus status{0, 0, 0};
+void DiskMonitor::Collect(serverstatus::SystemState* state, const std::string& path) {
     struct statvfs buf;
 
     if (statvfs(path.c_str(), &buf) == 0) {
-        // f_frsize is fragment size，usually better than f_bsize
         uint64_t total = buf.f_blocks * buf.f_frsize;
-        uint64_t free = buf.f_bfree * buf.f_frsize; // f_bfree is total available;f_bavail is non-root-user available
-        
-        status.total_bytes = total;
-        status.free_bytes = free;
-        status.used_bytes = total - free;
-    }
+        uint64_t free = buf.f_bfree * buf.f_frsize; 
+        uint64_t used = total - free;
 
-    return status;
+        state->set_disk_total(total);
+        state->set_disk_used(used);
+    } else {
+        state->set_disk_total(0);
+        state->set_disk_used(0);
+    }
 }
 
 } // namespace monitor

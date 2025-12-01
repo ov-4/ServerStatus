@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "collector.pb.h"
 
 namespace monitor {
 
@@ -8,7 +8,7 @@ class CpuMonitor {
 public:
     CpuMonitor();
     
-    double getUsage();
+    void Collect(serverstatus::SystemState* state);
 
 private:
     struct CpuStats {
@@ -28,4 +28,4 @@ private:
     unsigned long long last_idle_time_;
 };
 
-} 
+} // namespace monitor

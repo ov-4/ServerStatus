@@ -6,7 +6,7 @@
 
 namespace monitor {
 
-RamStatus RamMonitor::getStatus() {
+void RamMonitor::Collect(serverstatus::SystemState* state) {
     std::ifstream file("/proc/meminfo");
     std::string line;
     std::unordered_map<std::string, uint64_t> mem_info;
@@ -15,38 +15,31 @@ RamStatus RamMonitor::getStatus() {
         std::istringstream ss(line);
         std::string key;
         uint64_t value;
-        std::string unit; // kb
+        std::string unit; 
 
         if (ss >> key >> value) {
             if (!key.empty() && key.back() == ':') {
-                key.pop_back(); // remove colon
+                key.pop_back();
                 mem_info[key] = value;
             }
         }
     }
 
-    RamStatus status{};
-    status.total_kb = mem_info["MemTotal"];
-    status.available_kb = mem_info["MemAvailable"];
-    status.free_kb = mem_info["MemFree"];
-    status.swap_total_kb = mem_info["SwapTotal"];
-    uint64_t swap_free = mem_info["SwapFree"];
-    
-    // if no modern kernal available (MemAvailable), use Free + Buffers + Cached
-    if (status.available_kb == 0 && mem_info.count("Cached")) {
-        status.available_kb = status.free_kb + mem_info["Buffers"] + mem_info["Cached"];
+    uint64_t total_kb = mem_info["MemTotal"];
+    uint64_t available_kb = mem_info["MemAvailable"];
+    uint64_t free_kb = mem_info["MemFree"];
+
+    if (available_kb == 0 && mem_info.count("Cached")) {
+        available_kb = free_kb + mem_info["Buffers"] + mem_info["Cached"];
     }
 
-    // used Total - Available
-    if (status.total_kb >= status.available_kb) {
-        status.used_kb = status.total_kb - status.available_kb;
-    }
-    
-    if (status.swap_total_kb >= swap_free) {
-        status.swap_used_kb = status.swap_total_kb - swap_free;
+    uint64_t used_kb = 0;
+    if (total_kb >= available_kb) {
+        used_kb = total_kb - available_kb;
     }
 
-    return status;
+    state->set_memory_total(total_kb * 1024);
+    state->set_memory_used(used_kb * 1024);
 }
 
 } // namespace monitor
