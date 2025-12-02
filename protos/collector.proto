@@ -5,7 +5,6 @@ package serverstatus;
 message SystemState {
   // CPU usage (0.0 - 100.0)
   float cpu_usage = 1;
-
   // RAM
   uint64 memory_total = 2;
   uint64 memory_used = 3;
@@ -20,6 +19,10 @@ message SystemState {
 
   // uptime
   uint64 uptime = 8;
+  
+  // auth
+  string uuid = 10;
+  string token = 11;
 }
 
 message Ack {
