@@ -6,17 +6,18 @@ history_size: 120 # second
 
 speedtest:
   enabled: true
-  "Cloudflare DNS":
+  test:
+  - name: "Cloudflare DNS"
     enabled: true
     method: "icmp" # Options: icmp, tcp, get
     interval: 30 # second
     target: "1.1.1.1" # for ICMP, only ip address
-  "Google DNS over TCP":
+  - name: "Google DNS over TCP"
     enabled: true
     method: "tcp"
     interval: 30
     target: "8.8.8.8:443" # for TCP, ip:port
-  "gstatic":
+  - name: "gstatic"
     enabled: true
     method: "get"
     interval: 30
