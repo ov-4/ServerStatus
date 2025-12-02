@@ -47,6 +47,7 @@ target_link_libraries(server_status_server PRIVATE
     collector_grpc_proto
     gRPC::grpc++
     yaml-cpp
+    server_status_common
 )
 
 add_custom_command(TARGET server_status_server POST_BUILD

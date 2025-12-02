@@ -1,5 +1,6 @@
 #include "service.h"
 #include "storage.h"
+#include "server_config.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -21,14 +22,22 @@ std::string FormatBytes(uint64_t bytes) {
 }
 
 grpc::Status MonitorServiceImpl::ReportState(grpc::ServerContext* context, const SystemState* request, Ack* reply) {
-    // 获取客户端标识 (IP:Port)
     std::string client_id = context->peer();
 
-    // [新增] 将数据存入内存
-    Storage::Instance().Update(client_id, *request);
+    std::string uuid = request->uuid();
+    std::string token = request->token();
 
-    // 依然保留日志打印，方便调试
-    std::cout << "[RPC] Update from: " << client_id << std::endl;
+    if (!ServerConfig::Instance().Verify(uuid, token)) {
+        std::cerr << "[Auth] Unauthorized access from " << client_id
+                  << " (UUID: " << uuid << ")" << std::endl;
+        return grpc::Status(grpc::PERMISSION_DENIED, "Authentication failed");
+    }
+
+    std::string storage_id = uuid.empty() ? client_id : uuid;
+
+    Storage::Instance().Update(storage_id, *request);
+
+    std::cout << "[RPC] Update from: " << storage_id << std::endl;
 
     reply->set_success(true);
     reply->set_message("OK");

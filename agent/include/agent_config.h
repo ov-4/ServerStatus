@@ -5,6 +5,8 @@ namespace collector {
 
 struct AgentConfigData {
     std::string server_address;
+    std::string uuid;
+    std::string token;
 };
 
 class AgentConfig {

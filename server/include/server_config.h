@@ -11,6 +11,8 @@
 
 #include <string>
 #include <memory>
+#include <vector>
+#include <map>
 
 namespace serverstatus {
 
@@ -31,11 +33,17 @@ public:
 
     bool Load(const std::string& path);
 
+    bool LoadServers(const std::string& path);
+    
+    bool Verify(const std::string& uuid, const std::string& token);
+
     const ServerConfigData& Get() const { return data_; }
 
 private:
     ServerConfig() = default;
     ServerConfigData data_;
+
+    std::map<std::string, std::string> authorized_servers_;
 };
 
 } // namespace serverstatus

@@ -62,6 +62,11 @@ int main() {
         std::cerr << "Failed to load config.yaml" << std::endl;
         return 1;
     }
+    if (!serverstatus::ServerConfig::Instance().LoadServers("server-list.yaml")) {
+        std::cerr << "Failed to load server-list.yaml" << std::endl;
+        return 1;
+    }
+
     const auto& config = serverstatus::ServerConfig::Instance().Get();
 
     std::thread http_thread(RunHttpServer);

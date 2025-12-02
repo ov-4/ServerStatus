@@ -1,4 +1,5 @@
 #include "client.h"
+#include "agent_config.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -17,8 +18,13 @@ AgentClient::AgentClient(const std::string& server_address) {
 void AgentClient::Run() {
     std::cout << "Agent started. Reporting loop running..." << std::endl;
 
+    const auto& config = AgentConfig::Instance().Get();
+
     while (true) {
         serverstatus::SystemState state;
+
+        state.set_uuid(config.uuid);
+        state.set_token(config.token);
 
         cpu_mon_.Collect(&state);
         ram_mon_.Collect(&state);

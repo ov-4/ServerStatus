@@ -43,6 +43,7 @@ target_link_libraries(agent_collector PUBLIC
     nlohmann_json::nlohmann_json
     collector_grpc_proto
     yaml-cpp
+    server_status_common
 )
 
 add_executable(server_status_agent 
@@ -51,4 +52,8 @@ add_executable(server_status_agent
     src/config.cc
 )
 
-target_link_libraries(server_status_agent PRIVATE agent_collector OpenSSL::SSL)
+target_link_libraries(server_status_agent PRIVATE 
+    agent_collector 
+    OpenSSL::SSL
+    server_status_common
+)
