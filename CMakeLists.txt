@@ -78,5 +78,6 @@ target_link_libraries(collector_grpc_proto PUBLIC
     protobuf::libprotobuf
 )
 
+add_subdirectory(common)
 add_subdirectory(agent)
 add_subdirectory(server)
