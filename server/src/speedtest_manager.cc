@@ -9,24 +9,28 @@ std::vector<SpeedtestTask> SpeedtestManager::GetTasksForAgent(const std::string&
     std::vector<SpeedtestTask> tasks;
     
     time_t now = std::time(nullptr);
-    const auto& targets = ServerConfig::Instance().GetSpeedtestTargets();
+    
+    // get current shared_ptr
+    auto cfg = ServerConfigLoader::Instance().Get();
 
-    for (const auto& [name, config] : targets) {
-        if (!config.enabled) continue;
+    if (!cfg->speedtest_enabled) return tasks;
 
-        time_t last_run = last_execution_time_[agent_uuid][name]; // defaults to 0
+    for (const auto& item : cfg->speed_tests) {
+        if (!item.enabled) continue;
+
+        // use item.name
+        time_t last_run = last_execution_time_[agent_uuid][item.name];
         
-        if (now - last_run >= config.interval) {
+        if (now - last_run >= item.interval) {
             SpeedtestTask task;
-            task.set_id(name);
-            task.set_type(config.method);
-            task.set_target(config.target);
+            task.set_id(item.name);
+            task.set_type(item.method);
+            task.set_target(item.target);
             tasks.push_back(task);
 
-            // up execution time immediately to prevent duplicate scheduling
-            last_execution_time_[agent_uuid][name] = now;
+            last_execution_time_[agent_uuid][item.name] = now;
             
-            std::cout << "[Scheduler] Sending task '" << name << "' to " << agent_uuid << std::endl;
+            // std::cout << "[Scheduler] Sending task '" << item.name << "'..." << std::endl;
         }
     }
 

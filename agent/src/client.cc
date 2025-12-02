@@ -26,9 +26,8 @@ namespace collector {
                 latency = SpeedtestExecutor::PingHttp(task.target());
             }
 
-            // packet loss logic (simulated for now, 0 if success, 100 if fail)
+            // packet loss logic
             double loss = (latency > 0) ? 0.0 : 100.0;
-
             SpeedtestExecutor::AddResult({task.id(), latency, loss});
         }
     }).detach();
@@ -45,19 +44,21 @@ AgentClient::AgentClient(const std::string& server_address) {
 
 void AgentClient::Run() {
     std::cout << "Agent started. Reporting loop running..." << std::endl;
-    const auto& config = AgentConfig::Instance().Get();
 
     while (true) {
+        auto config = AgentConfigLoader::Instance().Get();
+
         serverstatus::SystemState state;
-        state.set_uuid(config.uuid);
-        state.set_token(config.token);
+
+        state.set_uuid(config->uuid);
+        state.set_token(config->token);
 
         cpu_mon_.Collect(&state);
         ram_mon_.Collect(&state);
         disk_mon_.Collect(&state, "/");
         net_mon_.Collect(&state);
 
-        // get pending speedtest results (from previous runs)
+        // get pending speedtest results
         auto results = SpeedtestExecutor::PopAllResults();
         for (const auto& res : results) {
             auto* r = state.add_speedtest_results();
@@ -76,7 +77,6 @@ void AgentClient::Run() {
             if (!ack.success()) {
                 std::cerr << "[Server Error] " << ack.message() << std::endl;
             } else {
-                // run tasks asynchronously
                 RunSpeedtestTasks(ack);
             }
         } else {

@@ -18,15 +18,13 @@ using grpc::ServerBuilder;
 
 void RunHttpServer() {
     httplib::Server svr;
-    const auto& config = serverstatus::ServerConfig::Instance().Get();
+    
+    auto config = serverstatus::ServerConfigLoader::Instance().Get();
 
     // api routes
     svr.Get("/api/stats", api::StatsHandler::Handle);
     svr.Get("/api/history", api::HistoryHandler::Handle);
-    
 
-    // for static file
-    // will be added soon
     svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::ifstream file("web/index.html");
         if (file.is_open()) {
@@ -35,34 +33,35 @@ void RunHttpServer() {
             res.set_content(buffer.str(), "text/html");
         } else {
             res.status = 404;
-            res.set_content("web/index.html not found. Make sure you are running from the correct directory.", "text/plain");
+            res.set_content("web/index.html not found.", "text/plain");
         }
     });
     
-    // for css/ks
-    // path  web/assets/
     svr.set_mount_point("/assets", "web/assets");
 
-    std::cout << "[HTTP] Server listening on " << config.listen_host << ":" << config.listen_port << std::endl;
-    svr.listen(config.listen_host.c_str(), config.listen_port);
+    std::cout << "[HTTP] Server listening on " << config->listen_host << ":" << config->listen_port << std::endl;
+    svr.listen(config->listen_host.c_str(), config->listen_port);
 }
 
 int main() {
-    if (!serverstatus::ServerConfig::Instance().Load("config.yaml")) {
+    if (!serverstatus::ServerConfigManager::InitConfig("config.yaml")) {
         std::cerr << "Failed to load config.yaml" << std::endl;
         return 1;
     }
-    if (!serverstatus::ServerConfig::Instance().LoadServers("server-list.yaml")) {
+    
+    if (!serverstatus::ServerConfigManager::InitServerList("server-list.yaml")) {
         std::cerr << "Failed to load server-list.yaml" << std::endl;
-        return 1;
+    } else {
+        auto list_cfg = serverstatus::ServerListLoader::Instance().Get();
+        std::cout << "[Config] Loaded " << list_cfg->servers.size() << " servers from whitelist." << std::endl;
     }
 
-    const auto& config = serverstatus::ServerConfig::Instance().Get();
+    auto config = serverstatus::ServerConfigLoader::Instance().Get();
 
     std::thread http_thread(RunHttpServer);
     http_thread.detach(); 
 
-    std::string server_address = config.grpc_host + ":" + std::to_string(config.grpc_port);
+    std::string server_address = config->grpc_host + ":" + std::to_string(config->grpc_port);
     serverstatus::MonitorServiceImpl service;
 
     ServerBuilder builder;

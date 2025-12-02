@@ -1,26 +1,30 @@
 #pragma once
+
 #include <string>
+#include <yaml-cpp/yaml.h>
+#include "config_loader.h"
 
 namespace collector {
 
-struct AgentConfigData {
+struct AgentConfig {
     std::string server_address;
     std::string uuid;
     std::string token;
 };
 
-class AgentConfig {
+using AgentConfigLoader = ConfigLoader<AgentConfig>;
+
+class AgentConfigManager {
 public:
-    static AgentConfig& Instance() {
-        static AgentConfig instance;
-        return instance;
-    }
-
-    bool Load(const std::string& path);
-    const AgentConfigData& Get() const { return data_; }
-
-private:
-    AgentConfigData data_;
+    static bool Init(const std::string& path);
 };
 
 } // namespace collector
+
+namespace YAML {
+    template<>
+    struct convert<collector::AgentConfig> {
+        static Node encode(const collector::AgentConfig& rhs);
+        static bool decode(const Node& node, collector::AgentConfig& rhs);
+    };
+}

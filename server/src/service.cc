@@ -28,7 +28,9 @@ grpc::Status MonitorServiceImpl::ReportState(grpc::ServerContext* context, const
     std::string uuid = request->uuid();
     std::string token = request->token();
 
-    if (!ServerConfig::Instance().Verify(uuid, token)) {
+    auto auth_config = ServerListLoader::Instance().Get();
+    
+    if (!auth_config->Verify(uuid, token)) {
         std::cerr << "[Auth] Unauthorized access from " << client_id
                   << " (UUID: " << uuid << ")" << std::endl;
         return grpc::Status(grpc::PERMISSION_DENIED, "Authentication failed");

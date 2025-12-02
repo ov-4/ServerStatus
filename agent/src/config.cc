@@ -1,53 +1,58 @@
 #include "agent_config.h"
-#include "default_config.h"
 #include "utils.h"
-#include <fstream>
 #include <iostream>
-#include <yaml-cpp/yaml.h>
+#include <filesystem> // C++17
 
 namespace collector {
 
-bool AgentConfig::Load(const std::string& path) {
-    std::ifstream fin(path);
-    if (!fin.good()) {
-        std::cout << "[Agent] Config file not found. Generating new identity..." << std::endl;
+bool AgentConfigManager::Init(const std::string& path) {
+    if (!std::filesystem::exists(path)) {
+        std::cout << "[Agent] Config not found. Generating default..." << std::endl;
         
-        // gnerate UUID and token
-        std::string new_uuid = Utils::GenerateUUID();
-        std::string new_token = Utils::GenerateRandomPassword(32);
-        
-        YAML::Node new_config;
-        new_config["server_address"] = "127.0.0.1:8081";
-        new_config["uuid"] = new_uuid;
-        new_config["token"] = new_token;
-        
-        std::ofstream fout(path);
-        fout << new_config;
-        fout.close();
-        
-        std::cout << "============================================" << std::endl;
-        std::cout << "  UUID : " << new_uuid << std::endl;
-        std::cout << "  Token: " << new_token << std::endl;
-        std::cout << "============================================" << std::endl;
-    }
+        AgentConfig default_conf;
+        default_conf.server_address = "127.0.0.1:8081";
+        default_conf.uuid = Utils::GenerateUUID();
+        default_conf.token = Utils::GenerateRandomPassword(32);
 
-    try {
-        YAML::Node config = YAML::LoadFile(path);
-        data_.server_address = config["server_address"].as<std::string>("127.0.0.1:8081");
-        
-        if (config["uuid"]) data_.uuid = config["uuid"].as<std::string>();
-        if (config["token"]) data_.token = config["token"].as<std::string>();
-        
-        if (data_.uuid.empty()) {
-            std::cerr << "[Warning] No UUID found" << std::endl;
+        // save
+        if (AgentConfigLoader::Instance().Save(path, default_conf)) {
+            std::cout << "============================================" << std::endl;
+            std::cout << "  UUID : " << default_conf.uuid << std::endl;
+            std::cout << "  Token: " << default_conf.token << std::endl;
+            std::cout << "============================================" << std::endl;
+        } else {
+            std::cerr << "[Error] Failed to write config file!" << std::endl;
+            return false;
         }
-
-        std::cout << "[Agent] Loaded config from " << path << std::endl;
-        return true;
-    } catch (const YAML::Exception& e) {
-        std::cerr << "[Agent] YAML Error: " << e.what() << std::endl;
-        return false;
     }
+
+    // load normally
+    return AgentConfigLoader::Instance().Load(path);
 }
 
 } // namespace collector
+
+namespace YAML {
+
+// save
+Node convert<collector::AgentConfig>::encode(const collector::AgentConfig& rhs) {
+    Node node;
+    node["server_address"] = rhs.server_address;
+    node["uuid"] = rhs.uuid;
+    node["token"] = rhs.token;
+    return node;
+}
+
+// load
+bool convert<collector::AgentConfig>::decode(const Node& node, collector::AgentConfig& rhs) {
+    if (!node.IsMap()) return false;
+
+    rhs.server_address = node["server_address"].as<std::string>("127.0.0.1:8081");
+    // if uuid or token is missing, keep it empty
+    if (node["uuid"]) rhs.uuid = node["uuid"].as<std::string>();
+    if (node["token"]) rhs.token = node["token"].as<std::string>();
+
+    return true;
+}
+
+} // namespace YAML

@@ -13,8 +13,6 @@
 #include "collector.pb.h"
 #include "agent_config.h"
 
-#define SERVER_ADDRESS "127.0.0.1:8081"
-
 std::string format_bytes(uint64_t bytes) {
     const char* suffixes[] = {"B", "KB", "MB", "GB", "TB", "PB"};
     int i = 0;
@@ -32,33 +30,30 @@ std::string format_bytes(uint64_t bytes) {
 
 void print_monitor_info(const serverstatus::SystemState& state) {
     std::cout << "\033[2J\033[1;1H";
-
     std::cout << "----------------------------------------" << std::endl;
-
     std::cout << " CPU  : " << std::fixed << std::setprecision(1) << state.cpu_usage() << "%" << std::endl;
-    
     std::cout << " RAM  : " << format_bytes(state.memory_used()) << " / " 
               << format_bytes(state.memory_total()) << std::endl;
-              
     std::cout << " Disk : " << format_bytes(state.disk_used()) << " / " 
               << format_bytes(state.disk_total()) << std::endl;
-              
     std::cout << " Speed: ↓ " << format_bytes(state.network_rx_speed()) << "/s"
               << "  ↑ " << format_bytes(state.network_tx_speed()) << "/s" << std::endl;
-    
-    // std::cout << " Uptime: " << state.uptime() << std::endl;
 }
 
 int main(int argc, char** argv) {
     std::string config_path = "config.yaml";
-    if (collector::AgentConfig::Instance().Load(config_path)) {
+    
+
+    if (collector::AgentConfigManager::Init(config_path)) {
         // load successfully
     } else {
         std::cerr << "Failed to initialize configuration." << std::endl;
         return 1;
     }
 
-    std::string server_address = collector::AgentConfig::Instance().Get().server_address;
+    auto cfg = collector::AgentConfigLoader::Instance().Get();
+
+    std::string server_address = cfg->server_address;
     
     if (argc > 1) {
         server_address = argv[1];
