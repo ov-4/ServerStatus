@@ -25,8 +25,29 @@ bool ServerConfig::Load(const std::string& path) {
         data_.grpc_host = config["grpc_host"].as<std::string>("0.0.0.0");
         data_.grpc_port = config["grpc_port"].as<int>(8081);
         data_.history_size = config["history_size"].as<int>(120);
+
+        if (config["speedtest"]) {
+            auto st_node = config["speedtest"];
+            if (st_node["enabled"].as<bool>(false)) {
+                for (YAML::const_iterator it = st_node.begin(); it != st_node.end(); ++it) {
+                    std::string key = it->first.as<std::string>();
+                    if (key == "enabled") continue; // skip the global enabled flag
+
+                    YAML::Node item_node = it->second;
+                    if (item_node["enabled"].as<bool>(false)) {
+                        SpeedtestConfigItem item;
+                        item.enabled = true;
+                        item.method = item_node["method"].as<std::string>("tcp");
+                        item.interval = item_node["interval"].as<int>(60);
+                        item.target = item_node["target"].as<std::string>("");
+                        
+                        speedtest_targets_[key] = item;
+                        std::cout << "[Config] Loaded speedtest target: " << key << std::endl;
+                    }
+                }
+            }
+        }
         
-        std::cout << "[Config] Loaded configuration from " << path << std::endl;
         return true;
     } catch (const YAML::Exception& e) {
         std::cerr << "[Config] Error parsing YAML: " << e.what() << std::endl;

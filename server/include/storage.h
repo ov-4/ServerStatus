@@ -55,27 +55,33 @@ public:
     }
 
     nlohmann::json GetHistoryAsJson(const std::string& id) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        nlohmann::json result = nlohmann::json::array();
-        
-        if (clients_.find(id) == clients_.end()) {
-            return result;
-        }
+    std::lock_guard<std::mutex> lock(mutex_);
+    nlohmann::json result = nlohmann::json::array();
+    
+    if (clients_.find(id) == clients_.end()) return result;
 
-        const auto& history = clients_[id];
-        for (const auto& state : history) {
-            nlohmann::json j;
-            j["cpu"] = state.cpu_usage();
-            j["mem_used"] = state.memory_used();
-            j["mem_total"] = state.memory_total();
-            j["disk_used"] = state.disk_used();
-            j["disk_total"] = state.disk_total();
-            j["rx_speed"] = state.network_rx_speed();
-            j["tx_speed"] = state.network_tx_speed();
-            result.push_back(j);
+    const auto& history = clients_[id];
+    for (const auto& state : history) {
+        nlohmann::json j;
+        j["cpu"] = state.cpu_usage();
+        j["mem_used"] = state.memory_used();
+        j["mem_total"] = state.memory_total();
+        j["rx_speed"] = state.network_rx_speed();
+        j["tx_speed"] = state.network_tx_speed();
+        
+        j["speedtest"] = nlohmann::json::array();
+        for (const auto& st : state.speedtest_results()) {
+            nlohmann::json s_json;
+            s_json["id"] = st.id();
+            s_json["latency"] = st.latency_ms();
+            s_json["loss"] = st.packet_loss();
+            j["speedtest"].push_back(s_json);
         }
-        return result;
+        
+        result.push_back(j);
     }
+    return result;
+}
 
 private:
     Storage() = default;

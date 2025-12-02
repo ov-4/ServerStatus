@@ -2,32 +2,39 @@ syntax = "proto3";
 
 package serverstatus;
 
+message SpeedtestTask {
+  string id = 1;
+  string type = 2;
+  string target = 3;
+}
+
+message SpeedtestResult {
+  string id = 1;
+  double latency_ms = 2;
+  double packet_loss = 3;
+}
+
 message SystemState {
-  // CPU usage (0.0 - 100.0)
+  // Existing fields...
   float cpu_usage = 1;
-  // RAM
   uint64 memory_total = 2;
   uint64 memory_used = 3;
-
-  // disk
   uint64 disk_total = 4;
   uint64 disk_used = 5;
-
-  // network speed
-  uint64 network_rx_speed = 6; // download
-  uint64 network_tx_speed = 7; // upload
-
-  // uptime
+  uint64 network_rx_speed = 6;
+  uint64 network_tx_speed = 7;
   uint64 uptime = 8;
-  
-  // auth
   string uuid = 10;
   string token = 11;
+
+  repeated SpeedtestResult speedtest_results = 20;
 }
 
 message Ack {
   bool success = 1;
   string message = 2;
+  
+  repeated SpeedtestTask speedtest_tasks = 3; 
 }
 
 service MonitorService {

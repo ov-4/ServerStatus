@@ -1,6 +1,7 @@
 #include "service.h"
 #include "storage.h"
 #include "server_config.h"
+#include "speedtest_manager.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -37,7 +38,11 @@ grpc::Status MonitorServiceImpl::ReportState(grpc::ServerContext* context, const
 
     Storage::Instance().Update(storage_id, *request);
 
-    std::cout << "[RPC] Update from: " << storage_id << std::endl;
+    auto tasks = SpeedtestManager::Instance().GetTasksForAgent(request->uuid());
+    for (const auto& task : tasks) {
+        auto* t = reply->add_speedtest_tasks();
+        t->CopyFrom(task);
+    }
 
     reply->set_success(true);
     reply->set_message("OK");

@@ -30,6 +30,7 @@ set(COLLECTOR_SOURCES
     src/collector/disk.cc
     src/collector/network.cc
     src/config.cc
+    src/collector/speedtest.cc
 )
 
 add_library(agent_collector STATIC ${COLLECTOR_SOURCES})
@@ -37,6 +38,7 @@ add_library(agent_collector STATIC ${COLLECTOR_SOURCES})
 target_include_directories(agent_collector PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${AGENT_GEN_HEADER_DIR} # default .yaml file
+    ${cpp-httplib_SOURCE_DIR}
 )
 
 target_link_libraries(agent_collector PUBLIC 
@@ -44,6 +46,8 @@ target_link_libraries(agent_collector PUBLIC
     collector_grpc_proto
     yaml-cpp
     server_status_common
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 add_executable(server_status_agent 

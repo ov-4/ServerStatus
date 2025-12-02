@@ -31,6 +31,7 @@ set(SERVER_SOURCES
     src/api/history_handler.cc
     src/service.cc
     src/config.cc
+    src/speedtest_manager.cc
 )
 
 add_executable(server_status_server ${SERVER_SOURCES})

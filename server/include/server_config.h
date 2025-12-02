@@ -10,11 +10,17 @@
 
 
 #include <string>
-#include <memory>
 #include <vector>
 #include <map>
 
 namespace serverstatus {
+
+struct SpeedtestConfigItem {
+    bool enabled;
+    std::string method;
+    int interval;
+    std::string target;
+};
 
 struct ServerConfigData {
     std::string listen_host;
@@ -32,18 +38,17 @@ public:
     }
 
     bool Load(const std::string& path);
-
     bool LoadServers(const std::string& path);
-    
     bool Verify(const std::string& uuid, const std::string& token);
 
     const ServerConfigData& Get() const { return data_; }
+    const std::map<std::string, SpeedtestConfigItem>& GetSpeedtestTargets() const { return speedtest_targets_; }
 
 private:
     ServerConfig() = default;
     ServerConfigData data_;
-
     std::map<std::string, std::string> authorized_servers_;
+    std::map<std::string, SpeedtestConfigItem> speedtest_targets_;
 };
 
 } // namespace serverstatus
