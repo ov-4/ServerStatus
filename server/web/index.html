@@ -1,320 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ServerStatus</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { padding: 20px; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border: none; box-shadow: 0 0 15px rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 20px; background: #fff; }
-        .card-header { background: #fff; border-bottom: 1px solid #eee; font-weight: 600; color: #555; padding: 15px 20px; }
-        
-        /* 列表样式 */
-        .table { margin-bottom: 0; }
-        .table thead th { border-top: 0; border-bottom-width: 1px; font-weight: 600; color: #666; background: #f8f9fa; }
-        .table-hover tbody tr:hover { background-color: #f8f9fa; cursor: pointer; transition: background 0.2s; }
-        
-        /* 状态点 */
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .status-online { background-color: #28a745; box-shadow: 0 0 5px rgba(40,167,69,0.5); }
-        .status-offline { background-color: #dc3545; }
-
-        /* 图表容器 */
-        .chart-box { position: relative; height: 280px; width: 100%; }
-        
-        /* 进度条 */
-        .progress { height: 6px; margin-top: 5px; background-color: #e9ecef; }
-        
-        .d-none { display: none !important; }
-        .btn-back { margin-bottom: 20px; }
-    </style>
+    <!-- Custom Dark CSS -->
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>ServerStatus <small class="text-muted fs-6">Live</small></h3>
-        <span class="badge bg-success" id="status-badge">Connected</span>
-    </div>
-
-    <div id="dashboard">
-        <div class="card">
-            <div class="card-body p-0">
-                <table class="table table-hover align-middle text-center">
-                    <thead>
-                        <tr>
-                            <th class="text-start ps-4">Server</th>
-                            <th style="width:25%">CPU</th>
-                            <th>RAM</th>
-                            <th>Network (In/Out)</th>
-                            <th>Disk</th>
-                        </tr>
-                    </thead>
-                    <tbody id="server-list">
-                        <tr><td colspan="5" class="text-muted py-4">Waiting for data...</td></tr>
-                    </tbody>
-                </table>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <span>⚡</span> ServerStatus
+            </div>
+            <div class="nav-links">
+                <a href="#">Services</a>
+                <a href="#">Settings</a>
+                <a href="#" style="background: #48bb78; padding: 4px 12px; border-radius: 4px; color: #fff;">Login</a>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <div id="detail" class="d-none">
-        <button class="btn btn-outline-secondary btn-sm btn-back" onclick="showDashboard()">
-            &larr; Back to List
-        </button>
-        <h4 id="detail-title" class="mb-4"></h4>
-        
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">CPU & Memory</div>
-                    <div class="card-body">
-                        <div class="chart-box"><canvas id="chartCpuRam"></canvas></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">Network</div>
-                    <div class="card-body">
-                        <div class="chart-box"><canvas id="chartNet"></canvas></div>
-                    </div>
+    <div class="container">
+        <!-- Dashboard View (Server Grid) -->
+        <div id="dashboard-view">
+            <div class="server-grid" id="server-grid">
+                <!-- Cards will be injected here by app.js -->
+                <div style="color: #a0aec0; text-align: center; grid-column: 1/-1; padding: 50px;">
+                    Loading servers...
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<script>
-    let currentDetailId = null;
-    
-    // 图表实例容器
-    const chartInstances = {
-        cpuRam: null,
-        net: null
-    };
-
-    // Chart.js 通用配置 (模仿 Nezha/Grafana 风格)
-    Chart.defaults.font.family = "'Segoe UI', 'Helvetica', 'Arial', sans-serif";
-    Chart.defaults.color = '#666';
-    
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false, // 🚫 禁用全局默认动画，这是解决“线条乱长”的关键
-        interaction: {
-            mode: 'index',
-            intersect: false,
-        },
-        plugins: {
-            tooltip: {
-                enabled: true,
-                mode: 'index',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                titleColor: '#333',
-                bodyColor: '#333',
-                borderColor: '#ddd',
-                borderWidth: 1,
-                padding: 10,
-                displayColors: true
-            },
-            legend: {
-                labels: { usePointStyle: true, boxWidth: 6 }
-            }
-        },
-        scales: {
-            x: {
-                grid: { display: false, drawBorder: false },
-                ticks: { display: false } // 隐藏X轴时间标签，保持简洁
-            },
-            y: {
-                grid: { color: '#f0f0f0', borderDash: [3, 3] },
-                beginAtZero: true
-            }
-        },
-        elements: {
-            point: { radius: 0, hoverRadius: 5 }, // 平时隐藏点，鼠标放上去才显示
-            line: { tension: 0.4, borderWidth: 2 } // 曲线平滑
-        }
-    };
-
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
-    }
-
-    // ================= 核心逻辑 =================
-
-    async function tick() {
-        try {
-            // 1. 获取列表数据
-            const listRes = await fetch('/api/stats');
-            const listData = await listRes.json();
+        <!-- Detail View (Hidden by default) -->
+        <div id="detail-view" class="detail-view">
+            <div class="detail-header">
+                <button class="btn-back" onclick="backToDashboard()">← Back</button>
+                <h2 id="detail-title" style="margin:0;">Server Name</h2>
+            </div>
             
-            document.getElementById('status-badge').className = 'badge bg-success';
-            document.getElementById('status-badge').innerText = 'Live';
+            <div class="charts-container">
+                <div class="chart-card">
+                    <canvas id="chart-cpu-mem"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="chart-net"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            if (!currentDetailId) {
-                renderList(listData);
-            } else {
-                // 2. 如果在详情页，额外获取历史数据
-                const historyRes = await fetch(`/api/history?id=${currentDetailId}`);
-                const historyData = await historyRes.json();
-                updateCharts(historyData);
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('status-badge').className = 'badge bg-danger';
-            document.getElementById('status-badge').innerText = 'Offline';
-        }
-    }
+    <footer>
+        <p>
+            Powered by ov4 - 
+            <a href="https://github.com/ov-4/ServerStatus/" style="color: #48bb78;">ServerStatus</a>
+        </p>
+    </footer>
 
-    function renderList(data) {
-        const tbody = document.getElementById('server-list');
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Waiting for data...</td></tr>';
-            return;
-        }
-
-        let html = '';
-        data.forEach(s => {
-            let cpuClass = s.cpu > 80 ? 'bg-danger' : (s.cpu > 50 ? 'bg-warning' : 'bg-success');
-            html += `
-            <tr onclick="showDetail('${s.id}')">
-                <td class="text-start ps-4 fw-bold">
-                    <span class="status-dot status-online"></span>${s.id}
-                </td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <span class="me-2 small" style="width:40px">${s.cpu.toFixed(0)}%</span>
-                        <div class="progress flex-grow-1" style="height:6px">
-                            <div class="progress-bar ${cpuClass}" style="width:${s.cpu}%"></div>
-                        </div>
-                    </div>
-                </td>
-                <td class="small text-muted">${formatBytes(s.mem_used)} / ${formatBytes(s.mem_total)}</td>
-                <td class="small">
-                    <span class="text-success">↓${formatBytes(s.rx_speed)}/s</span> 
-                    <span class="text-primary ms-2">↑${formatBytes(s.tx_speed)}/s</span>
-                </td>
-                <td class="small text-muted">${Math.round(s.disk_used/s.disk_total*100)}%</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-
-    function showDetail(id) {
-        currentDetailId = id;
-        document.getElementById('dashboard').classList.add('d-none');
-        document.getElementById('detail').classList.remove('d-none');
-        document.getElementById('detail-title').innerText = id;
-        
-        // 切换时销毁旧图表，确保没有残留
-        if(chartInstances.cpuRam) { chartInstances.cpuRam.destroy(); chartInstances.cpuRam = null; }
-        if(chartInstances.net) { chartInstances.net.destroy(); chartInstances.net = null; }
-        
-        tick(); // 立即触发一次更新
-    }
-
-    function showDashboard() {
-        currentDetailId = null;
-        document.getElementById('detail').classList.add('d-none');
-        document.getElementById('dashboard').classList.remove('d-none');
-    }
-
-    function updateCharts(data) {
-        const labels = data.map(() => ''); // 空标签
-        const cpuData = data.map(d => d.cpu);
-        const ramData = data.map(d => (d.mem_used / d.mem_total * 100));
-        const rxData = data.map(d => d.rx_speed / 1024); // KB/s
-        const txData = data.map(d => d.tx_speed / 1024); // KB/s
-
-        // ---- CPU & RAM 图表 ----
-        const ctxCpu = document.getElementById('chartCpuRam').getContext('2d');
-        if (!chartInstances.cpuRam) {
-            // 初始化
-            chartInstances.cpuRam = new Chart(ctxCpu, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'CPU',
-                            borderColor: '#007bff',
-                            backgroundColor: 'rgba(0, 123, 255, 0.1)', // 半透明填充
-                            borderWidth: 2,
-                            data: cpuData,
-                            fill: true // 面积图效果
-                        },
-                        {
-                            label: 'RAM',
-                            borderColor: '#6610f2',
-                            backgroundColor: 'rgba(102, 16, 242, 0.1)',
-                            borderWidth: 2,
-                            data: ramData,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, max: 100 } }
-                }
-            });
-        } else {
-            // 增量更新 (无动画)
-            const chart = chartInstances.cpuRam;
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = cpuData;
-            chart.data.datasets[1].data = ramData;
-            chart.update('none'); // 'none' 模式是关键
-        }
-
-        // ---- Network 图表 ----
-        const ctxNet = document.getElementById('chartNet').getContext('2d');
-        if (!chartInstances.net) {
-            chartInstances.net = new Chart(ctxNet, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'In (KB/s)',
-                            borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                            borderWidth: 2,
-                            data: rxData,
-                            fill: true
-                        },
-                        {
-                            label: 'Out (KB/s)',
-                            borderColor: '#fd7e14',
-                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
-                            borderWidth: 2,
-                            data: txData,
-                            fill: true
-                        }
-                    ]
-                },
-                options: commonOptions
-            });
-        } else {
-            const chart = chartInstances.net;
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = rxData;
-            chart.data.datasets[1].data = txData;
-            chart.update('none');
-        }
-    }
-
-    // 1000ms 刷新率
-    setInterval(tick, 1000);
-    tick(); // 启动时立即运行一次
-</script>
-
+    <script src="/assets/js/app.js"></script>
 </body>
 </html>
