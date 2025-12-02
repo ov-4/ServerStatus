@@ -26,10 +26,8 @@ bool AgentConfig::Load(const std::string& path) {
         fout.close();
         
         std::cout << "============================================" << std::endl;
-        std::cout << "  New Identity Generated!" << std::endl;
         std::cout << "  UUID : " << new_uuid << std::endl;
         std::cout << "  Token: " << new_token << std::endl;
-        std::cout << "  Please add these to the server's whitelist." << std::endl;
         std::cout << "============================================" << std::endl;
     }
 
