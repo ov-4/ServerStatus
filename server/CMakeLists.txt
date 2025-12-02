@@ -23,9 +23,12 @@ namespace serverstatus {
 }
 ")
 
+# Added the new API handlers here
 set(SERVER_SOURCES
     src/main.cc
     src/handlers/update_handler.cc
+    src/api/stats_handler.cc
+    src/api/history_handler.cc
     src/service.cc
     src/config.cc
 )
