@@ -2,4 +2,22 @@ listen_host: "0.0.0.0"
 listen_port: 8080
 grpc_host: "0.0.0.0"
 grpc_port: 8081
-history_size: 120
+history_size: 120 # second
+
+speedtest:
+  enabled: true
+  "Cloudflare DNS":
+    enabled: true
+    method: "icmp" # Options: icmp, tcp, get
+    interval: 30 # second
+    target: "1.1.1.1" # for ICMP, only ip address
+  "Google DNS over TCP":
+    enabled: true
+    method: "tcp"
+    interval: 30
+    target: "8.8.8.8:443" # for TCP, ip:port
+  "gstatic":
+    enabled: true
+    method: "get"
+    interval: 30
+    target: "http://www.gstatic.com/generate_204" # for GET, full URL
