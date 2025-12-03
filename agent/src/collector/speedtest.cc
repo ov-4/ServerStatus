@@ -44,6 +44,9 @@ double SpeedtestExecutor::PingIcmp(const std::string& host) {
     // use system `ping` to avoid need of raw socket permissions (aka root)
     // may support custom raw method later
 
+    if (host.empty()) return 0.0;
+    if (host.length() > 255) return 0.0;
+
     const std::string allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-";
     for (char &c : host) {
         if (allowed_chars.find(c) == std::string::npos) {
@@ -51,6 +54,9 @@ double SpeedtestExecutor::PingIcmp(const std::string& host) {
         }
     }
 
+    if (host[0] == '-' || host[host.length() - 1] == '-' || host[0] == '.') {
+        return 0.0;
+    }
 
     std::string cmd = "ping -c 1 -W 1 " + host + " 2>&1";
     std::array<char, 128> buffer;
