@@ -34,3 +34,8 @@ cd build
 emcmake cmake ..
 make
 ```
+
+## Clean
+```bash
+rm build/ web/build -rf
+```
