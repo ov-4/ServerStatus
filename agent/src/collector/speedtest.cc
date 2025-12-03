@@ -117,6 +117,8 @@ double SpeedtestExecutor::PingTcp(const std::string& target) {
 double SpeedtestExecutor::PingHttp(const std::string& url_str) {
     // http://domain/path
     // simplified parser
+    // TODO: may support https later
+    // so that tls latency can also be checked
     size_t proto_end = url_str.find("://");
     if (proto_end == std::string::npos) return 0.0;
     
