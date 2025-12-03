@@ -41,3 +41,6 @@
 *.dwo
 
 build/
+
+web/public/server_status.js
+web/public/server_status.wasm

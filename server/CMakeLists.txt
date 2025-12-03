@@ -55,8 +55,9 @@ target_link_libraries(server_status_server PRIVATE
 )
 
 add_custom_command(TARGET server_status_server POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:server_status_server>/web
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/web
+    ${CMAKE_SOURCE_DIR}/web/public
     $<TARGET_FILE_DIR:server_status_server>/web
-    COMMENT "Copying web assets to output directory..."
+    COMMENT "Copying ALL web assets (HTML/CSS/WASM) to output directory..."
 )

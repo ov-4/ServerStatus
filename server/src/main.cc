@@ -21,9 +21,18 @@ void RunHttpServer() {
     
     auto config = serverstatus::ServerConfigLoader::Instance().Get();
 
+    // set Wasm MIME
+    // for Safari
+    svr.set_file_extension_and_mimetype_mapping("wasm", "application/wasm");
+    // for JS and CSS
+    svr.set_file_extension_and_mimetype_mapping("js", "application/javascript");
+    svr.set_file_extension_and_mimetype_mapping("css", "text/css");
+
     // api routes
     svr.Get("/api/stats", api::StatsHandler::Handle);
     svr.Get("/api/history", api::HistoryHandler::Handle);
+
+    svr.set_mount_point("/", "web");
 
     svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::ifstream file("web/index.html");

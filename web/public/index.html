@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ServerStatus Wasm</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="dashboard-view">
+            <div class="server-grid" id="server-grid">
+                <div style="color:#a0aec0;text-align:center;">Loading Wasm Module...</div>
+            </div>
+        </div>
+
+        <div id="detail-view" class="detail-view" style="display:none;">
+            <div class="detail-header">
+                <button class="btn-back" onclick="Module.cppBackToDashboard()">← Back</button>
+                <h2 id="detail-title">Server</h2>
+            </div>
+            <div class="charts-container">
+                <div class="chart-card"><canvas id="chart-cpu-mem"></canvas></div>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        window.openDetail = function(id) {
+            // forward to CC
+            if (Module && Module.cppOpenDetail) {
+                Module.cppOpenDetail(id);
+            }
+        };
+
+        // Chart.js is only for rendering
+        let chartInstances = {};
+        
+        window.updateChartsJS = function(jsonString) {
+            const data = JSON.parse(jsonString);
+            console.log("JS received data from Wasm:", data.length);
+            
+            // updateCharts(data); 
+        };
+    </script>
+
+    <script src="server_status.js"></script>
+</body>
+</html>
