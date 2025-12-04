@@ -48,7 +48,7 @@ double SpeedtestExecutor::PingIcmp(const std::string& host) {
     if (host.length() > 255) return 0.0;
 
     const std::string allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-";
-    for (char &c : host) {
+    for (char c : host) {
         if (allowed_chars.find(c) == std::string::npos) {
             return 0.0;
         }
