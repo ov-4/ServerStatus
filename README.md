@@ -2,7 +2,7 @@
 
 Server Status implemented by 100% C++
 
-*NB: some features in web browser are coded in JavaScript currently, but will be done with WebAssembly in the future*
+*NB: some frontend features have to be JavaScript due to technical issues, or they are too difficult to implement in pure C++ (eg. glue code)*
 
 
 
