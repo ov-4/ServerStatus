@@ -11,6 +11,10 @@ static App* g_app = nullptr;
 void App::Init() {
     g_app = this;
     std::cout << "[Wasm] App Initialized." << std::endl;
+    
+    // init renderer, and init html template
+    renderer_.Init();
+
     FetchStats();
 }
 

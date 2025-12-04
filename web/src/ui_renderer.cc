@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <iostream>
-#include <numeric>
+#include <vector>
 
 using emscripten::val;
 
@@ -46,9 +46,41 @@ std::string GetColorClass(double percentage) {
 }
 
 std::string GetFlag(const std::string& name) {
-    return "🇨🇳"; //TODO: national flag mapping
+    return "🇨🇳"; // TODO: mapping
 }
 
+
+void UIRenderer::Init() {
+    val document = val::global("document");
+    
+    val templateElement = document.call<val>("getElementById", std::string("card-template"));
+    
+    if (!templateElement.isNull() && !templateElement.isUndefined()) {
+        card_template_ = templateElement["innerHTML"].as<std::string>();
+        std::cout << "[UIRenderer] Template loaded successfully." << std::endl;
+    } else {
+        std::cerr << "[UIRenderer] Error: 'card-template' not found in DOM." << std::endl;
+        card_template_ = "<div>Error: Template Not Found</div>";
+    }
+}
+
+void ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) return;
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); 
+    }
+}
+
+std::string UIRenderer::RenderTemplate(const std::string& templ, 
+                                       const std::unordered_map<std::string, std::string>& data) {
+    std::string result = templ;
+    for (const auto& [key, value] : data) {
+        ReplaceAll(result, key, value);
+    }
+    return result;
+}
 
 void UIRenderer::RenderGrid(const nlohmann::json& data) {
     auto document = val::global("document");
@@ -61,7 +93,7 @@ void UIRenderer::RenderGrid(const nlohmann::json& data) {
     }
 
     int totalServers = data.size();
-    int onlineServers = 0;
+    int onlineServers = 0; 
     uint64_t totalUpload = 0;
     uint64_t totalDownload = 0;
     uint64_t currentUploadSpeed = 0;
@@ -70,12 +102,10 @@ void UIRenderer::RenderGrid(const nlohmann::json& data) {
     std::stringstream serverHtml;
 
     for (const auto& server : data) {
-        bool isOnline = true; 
-        if (isOnline) onlineServers++;
-
+        onlineServers++;
+        
         totalUpload += server.value("total_tx", 0ULL); 
         totalDownload += server.value("total_rx", 0ULL);
-        
         currentUploadSpeed += server.value("tx_speed", 0ULL);
         currentDownloadSpeed += server.value("rx_speed", 0ULL);
 
@@ -84,43 +114,23 @@ void UIRenderer::RenderGrid(const nlohmann::json& data) {
 
     int offlineServers = totalServers - onlineServers;
 
-    // 2. 渲染概览卡片 (Summary Cards)
     std::stringstream summaryHtml;
-    // Total Servers
-    summaryHtml << "<div class='summary-card'>"
-                << "<div class='summary-title'><span class='status-dot online' style='background:#3b82f6;'></span>Total Servers</div>"
-                << "<div class='summary-value'>" << totalServers << "</div>"
-                << "</div>";
-    // Online Servers
-    summaryHtml << "<div class='summary-card'>"
-                << "<div class='summary-title'><span class='status-dot online'></span>Online Servers</div>"
-                << "<div class='summary-value'>" << onlineServers << "</div>"
-                << "</div>";
-    // Offline Servers
-    summaryHtml << "<div class='summary-card'>"
-                << "<div class='summary-title'><span class='status-dot offline'></span>Offline Servers</div>"
-                << "<div class='summary-value'>" << offlineServers << "</div>"
-                << "</div>";
-    // Network
-    summaryHtml << "<div class='summary-card network-card'>"
-                << "<div class='summary-title'>Network</div>"
-                << "<div class='network-stats'>"
+    summaryHtml << "<div class='summary-card'><div class='summary-title'><span class='status-dot online' style='background:#3b82f6;'></span>Total Servers</div><div class='summary-value'>" << totalServers << "</div></div>";
+    summaryHtml << "<div class='summary-card'><div class='summary-title'><span class='status-dot online'></span>Online Servers</div><div class='summary-value'>" << onlineServers << "</div></div>";
+    summaryHtml << "<div class='summary-card'><div class='summary-title'><span class='status-dot offline'></span>Offline Servers</div><div class='summary-value'>" << offlineServers << "</div></div>";
+    summaryHtml << "<div class='summary-card network-card'><div class='summary-title'>Network</div><div class='network-stats'>"
                 << "<div class='net-stat up'><i class='ri-arrow-up-line'></i> <span class='net-total'>" << FormatTotal(totalUpload) << "</span> " << FormatSpeed(currentUploadSpeed) << "</div>"
                 << "<div class='net-stat down'><i class='ri-arrow-down-line'></i> <span class='net-total'>" << FormatTotal(totalDownload) << "</span> " << FormatSpeed(currentDownloadSpeed) << "</div>"
-                << "</div>"
-                << "</div>";
+                << "</div></div>";
 
     summaryGrid.set("innerHTML", summaryHtml.str());
-    
     serverGrid.set("innerHTML", serverHtml.str());
 }
 
 std::string UIRenderer::CreateCardHTML(const nlohmann::json& s) {
-    std::string id = s.value("id", "Unknown");
-    bool isOnline = true;
-    std::string statusClass = isOnline ? "online" : "offline";
-    std::string cardClass = isOnline ? "" : "offline";
+    std::unordered_map<std::string, std::string> map_data;
 
+    std::string id = s.value("id", "Unknown");
     double cpu = s.value("cpu", 0.0);
     double mem_used = s.value("mem_used", 0.0);
     double mem_total = s.value("mem_total", 1.0);
@@ -131,56 +141,37 @@ std::string UIRenderer::CreateCardHTML(const nlohmann::json& s) {
 
     double memPercent = (mem_used / mem_total) * 100.0;
     double diskPercent = (disk_used / disk_total) * 100.0;
+    bool isOnline = true;
 
-    std::stringstream ss;
-    ss << "<div class='server-card " << cardClass << "' onclick=\"window.openDetail('" << id << "')\">";
+    std::stringstream ss_cpu, ss_mem, ss_disk;
+    ss_cpu << std::fixed << std::setprecision(1) << cpu;
+    ss_mem << std::fixed << std::setprecision(1) << memPercent;
+    ss_disk << std::fixed << std::setprecision(1) << diskPercent;
 
-    // --- Header (Left) ---
-    ss << "<div class='server-header'>";
-    ss << "<span class='flag'>" << GetFlag(id) << "</span>";
-    ss << "<div class='server-info'>";
-    ss << "<div class='server-name'>" << id << "</div>";
-    ss << "<span class='status-dot " << statusClass << "'></span>";
-    ss << "</div>";
-    ss << "</div>"; // end server-header
+    map_data["{id}"] = id;
+    map_data["{flag}"] = GetFlag(id);
+    map_data["{status_class}"] = isOnline ? "online" : "offline";
+    
+    // CPU
+    map_data["{cpu_val}"] = ss_cpu.str() + "%";
+    map_data["{cpu_width}"] = ss_cpu.str();
+    map_data["{cpu_color}"] = GetColorClass(cpu);
 
-    // --- Stats (Right - 5 Columns) ---
-    ss << "<div class='server-stats'>";
+    // MEM
+    map_data["{mem_val}"] = ss_mem.str() + "%";
+    map_data["{mem_width}"] = ss_mem.str();
+    map_data["{mem_color}"] = GetColorClass(memPercent);
 
-    // 1. CPU
-    ss << "<div class='stat-item'>";
-    ss << "<div class='stat-header'><span>CPU</span><span class='stat-value'>" << std::fixed << std::setprecision(2) << cpu << "%</span></div>";
-    ss << "<div class='progress-bar'><div class='progress-fill " << GetColorClass(cpu) << "' style='width:" << cpu << "%'></div></div>";
-    ss << "</div>";
+    // Disk
+    map_data["{disk_val}"] = ss_disk.str() + "%";
+    map_data["{disk_width}"] = ss_disk.str();
+    map_data["{disk_color}"] = GetColorClass(diskPercent);
 
-    // 2. MEM
-    ss << "<div class='stat-item'>";
-    ss << "<div class='stat-header'><span>MEM</span><span class='stat-value'>" << std::fixed << std::setprecision(2) << memPercent << "%</span></div>";
-    ss << "<div class='progress-bar'><div class='progress-fill " << GetColorClass(memPercent) << "' style='width:" << memPercent << "%'></div></div>";
-    ss << "</div>";
+    // Network
+    map_data["{tx_speed}"] = FormatSpeed(tx_speed);
+    map_data["{rx_speed}"] = FormatSpeed(rx_speed);
 
-    // 3. STG (Storage)
-    ss << "<div class='stat-item'>";
-    ss << "<div class='stat-header'><span>STG</span><span class='stat-value'>" << std::fixed << std::setprecision(2) << diskPercent << "%</span></div>";
-    ss << "<div class='progress-bar'><div class='progress-fill " << GetColorClass(diskPercent) << "' style='width:" << diskPercent << "%'></div></div>";
-    ss << "</div>";
-
-    // 4. Upload
-    ss << "<div class='stat-item'>";
-    ss << "<div class='stat-header'><span>Upload</span><span class='stat-value'>" << FormatSpeed(tx_speed) << "</span></div>";
-    ss << "<div class='progress-bar' style='background:none;'></div>"; 
-    ss << "</div>";
-
-    // 5. Download
-    ss << "<div class='stat-item'>";
-    ss << "<div class='stat-header'><span>Download</span><span class='stat-value'>" << FormatSpeed(rx_speed) << "</span></div>";
-    ss << "<div class='progress-bar' style='background:none;'></div>";
-    ss << "</div>";
-
-    ss << "</div>"; // end server-stats
-    ss << "</div>"; // end server-card
-
-    return ss.str();
+    return RenderTemplate(card_template_, map_data);
 }
 
 void UIRenderer::UpdateChartBridge(const nlohmann::json& history_data) {
